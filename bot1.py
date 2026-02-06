@@ -9,22 +9,17 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import FSInputFile
 
-
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # .env faylni o‘qiydi
+load_dotenv()
 
 TOKEN = os.getenv("TOKEN")
-
 if not TOKEN:
     raise ValueError("BOT_TOKEN .env faylda topilmadi!")
 
-
 # ================== SOZLAMALAR ==================
-
 ADMIN_ID = 1787857253
-
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=TOKEN)
@@ -88,8 +83,18 @@ def sub_keyboard():
     cur.execute("SELECT username FROM channels")
     kb = []
     for (u,) in cur.fetchall():
-        kb.append([InlineKeyboardButton(text="📢 Kanal", url=f"https://t.me/{u.replace('@','')}")])
-    kb.append([InlineKeyboardButton(text="✅ Obuna bo‘ldim", callback_data="check_sub")])
+        kb.append([
+            InlineKeyboardButton(
+                text="📢 Kanal",
+                url=f"https://t.me/{u.replace('@','')}"
+            )
+        ])
+    kb.append([
+        InlineKeyboardButton(
+            text="✅ Obuna bo‘ldim",
+            callback_data="check_sub"
+        )
+    ])
     return InlineKeyboardMarkup(inline_keyboard=kb)
 
 def admin_menu():
@@ -105,7 +110,10 @@ def admin_menu():
 # ================== /START ==================
 @dp.message(Command("start"))
 async def start(message: types.Message):
-    cur.execute("INSERT OR IGNORE INTO users VALUES (?)", (message.from_user.id,))
+    cur.execute(
+        "INSERT OR IGNORE INTO users VALUES (?)",
+        (message.from_user.id,)
+    )
     conn.commit()
 
     if message.from_user.id == ADMIN_ID:
@@ -144,9 +152,10 @@ async def save_video(message: types.Message, state: FSMContext):
 
 @dp.message(AddMovie.code)
 async def save_code(message: types.Message, state: FSMContext):
+    data = await state.get_data()
     cur.execute(
         "INSERT OR REPLACE INTO movies VALUES (?, ?)",
-        (message.text.strip(), (await state.get_data())["file_id"])
+        (message.text.strip(), data["file_id"])
     )
     conn.commit()
     await state.clear()
@@ -160,7 +169,10 @@ async def del_movie(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message(DeleteMovie.code)
 async def delete_movie(message: types.Message, state: FSMContext):
-    cur.execute("DELETE FROM movies WHERE code=?", (message.text.strip(),))
+    cur.execute(
+        "DELETE FROM movies WHERE code=?",
+        (message.text.strip(),)
+    )
     conn.commit()
     await state.clear()
     await message.answer("🗑 Kino o‘chirildi", reply_markup=admin_menu())
@@ -190,7 +202,10 @@ async def add_ch(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message(ChannelManage.add)
 async def save_ch(message: types.Message, state: FSMContext):
-    cur.execute("INSERT OR IGNORE INTO channels VALUES (?)", (message.text.strip(),))
+    cur.execute(
+        "INSERT OR IGNORE INTO channels VALUES (?)",
+        (message.text.strip(),)
+    )
     conn.commit()
     await state.clear()
     await message.answer("✅ Kanal qo‘shildi", reply_markup=admin_menu())
@@ -202,7 +217,10 @@ async def del_ch(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message(ChannelManage.remove)
 async def remove_ch(message: types.Message, state: FSMContext):
-    cur.execute("DELETE FROM channels WHERE username=?", (message.text.strip(),))
+    cur.execute(
+        "DELETE FROM channels WHERE username=?",
+        (message.text.strip(),)
+    )
     conn.commit()
     await state.clear()
     await message.answer("❌ Kanal olib tashlandi", reply_markup=admin_menu())
@@ -231,26 +249,35 @@ async def send_broadcast(message: types.Message, state: FSMContext):
 # ================== USER: KINO OLISH ==================
 @dp.message()
 async def get_movie(message: types.Message):
+    # 🔑 COMMAND’LARNI O‘TKAZIB YUBORAMIZ
+    if message.text.startswith("/"):
+        return
+
     if message.from_user.id == ADMIN_ID:
         return
 
     if not await check_subscription(message.from_user.id):
-        await message.answer("❗ Avval obuna bo‘ling", reply_markup=sub_keyboard())
+        await message.answer(
+            "❗ Avval obuna bo‘ling",
+            reply_markup=sub_keyboard()
+        )
         return
 
-    cur.execute("SELECT file_id FROM movies WHERE code=?", (message.text.strip(),))
+    cur.execute(
+        "SELECT file_id FROM movies WHERE code=?",
+        (message.text.strip(),)
+    )
     movie = cur.fetchone()
 
     if movie:
-        await message.answer_video(movie[0], caption="🎬 Yoqimli tomosha!")
+        await message.answer_video(
+            movie[0],
+            caption="🎬 Yoqimli tomosha!"
+        )
     else:
         await message.answer("❌ Bunday kodli kino yo‘q")
 
-
-
-
-
-
+# ================== ADMIN: DB YUKLAB OLISH ==================
 @dp.message(Command("getdb"))
 async def get_db(message: types.Message):
     if message.from_user.id != ADMIN_ID:
@@ -260,7 +287,6 @@ async def get_db(message: types.Message):
         FSInputFile("bot.db"),
         caption="💾 Railway bot ma'lumotlar bazasi"
     )
-
 
 # ================== RUN ==================
 async def main():

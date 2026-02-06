@@ -7,6 +7,8 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import FSInputFile
+
 
 import os
 from dotenv import load_dotenv
@@ -243,6 +245,22 @@ async def get_movie(message: types.Message):
         await message.answer_video(movie[0], caption="🎬 Yoqimli tomosha!")
     else:
         await message.answer("❌ Bunday kodli kino yo‘q")
+
+
+
+
+
+
+@dp.message(Command("getdb"))
+async def get_db(message: types.Message):
+    if message.from_user.id != ADMIN_ID:
+        return
+
+    await message.answer_document(
+        FSInputFile("bot.db"),
+        caption="💾 Railway bot ma'lumotlar bazasi"
+    )
+
 
 # ================== RUN ==================
 async def main():

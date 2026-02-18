@@ -239,13 +239,58 @@ async def send_broadcast(message: types.Message, state: FSMContext):
 
     for (uid,) in users:
         try:
-            await bot.send_message(uid, message.text)
-            await asyncio.sleep(0.03)
+            # TEXT
+            if message.text:
+                await bot.send_message(uid, message.text)
+
+            # PHOTO
+            elif message.photo:
+                await bot.send_photo(
+                    uid,
+                    message.photo[-1].file_id,
+                    caption=message.caption or ""
+                )
+
+            # VIDEO
+            elif message.video:
+                await bot.send_video(
+                    uid,
+                    message.video.file_id,
+                    caption=message.caption or ""
+                )
+
+            # AUDIO
+            elif message.audio:
+                await bot.send_audio(
+                    uid,
+                    message.audio.file_id,
+                    caption=message.caption or ""
+                )
+
+            # VOICE
+            elif message.voice:
+                await bot.send_voice(uid, message.voice.file_id)
+
+            # VIDEO NOTE (dumaloq video)
+            elif message.video_note:
+                await bot.send_video_note(uid, message.video_note.file_id)
+
+            # DOCUMENT
+            elif message.document:
+                await bot.send_document(
+                    uid,
+                    message.document.file_id,
+                    caption=message.caption or ""
+                )
+
+            await asyncio.sleep(0.05)
+
         except:
             pass
 
     await state.clear()
-    await message.answer("✅ Xabar yuborildi", reply_markup=admin_menu())
+    await message.answer("✅ Xabar barcha foydalanuvchilarga yuborildi", reply_markup=admin_menu())
+
 
 # ================== ADMIN: DB YUKLAB OLISH ==================
 @dp.callback_query(lambda c: c.data == "get_db")
@@ -297,3 +342,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+
